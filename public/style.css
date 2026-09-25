@@ -202,6 +202,7 @@ h1, h2, .btn, .room-code, .winner { font-family: 'Baloo 2', 'Quicksand', sans-se
   margin: 18px 0 6px; transform-origin: center;
 }
 .verdict.match { color: var(--pink-deep); }
+.verdict.partial { color: #c2671b; }
 .verdict.miss { color: var(--plum-soft); font-size: 24px; }
 .points-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
 .points-badge { background: linear-gradient(135deg, var(--mint), #8fe3ae); color: #14532d; font-weight: 800; border-radius: 999px; padding: 8px 16px; font-size: 15px; box-shadow: 0 6px 16px rgba(20,83,45,.15); }

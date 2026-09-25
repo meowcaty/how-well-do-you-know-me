@@ -24,10 +24,21 @@ const REVEAL_SECONDS = 12;  // auto-advance after reveal
 const DREX_API_KEY = process.env.DREX_API_KEY || '';
 const DREX_URL = 'https://drex.nace.ai/v1/systemone';
 
-async function drexSimilarity(a, b) {
+/* Resolve "me"/"I"/"myself" to the speaker's name so matchers compare meanings, not pronouns. */
+function resolveSelf(text, speakerName) {
+  const t = String(text || '').trim();
+  return /^(me|i|myself|mine)\.?$/i.test(t) ? speakerName : String(text || '');
+}
+
+async function drexSimilarity({ question, starName, guesserName, starAnswer, guessAnswer }) {
   if (!DREX_API_KEY) return null;
-  const x = String(a || '').trim(), y = String(b || '').trim();
+  const x = String(starAnswer || '').trim(), y = String(guessAnswer || '').trim();
   if (!x || !y) return null;
+  const state = [
+    `Question: "${question}"`,
+    `${starName} answered: "${x}"`,
+    `${guesserName} answered: "${y}"`,
+  ].join('\n');
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 4000);
@@ -36,11 +47,16 @@ async function drexSimilarity(a, b) {
       headers: { 'Authorization': `Bearer ${DREX_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'drex-latest',
-        state: `Answer 1: "${x}"\nAnswer 2: "${y}"`,
+        state,
         questions: {
           same: {
             type: 'noul',
-            instructions: 'Do these two answers mean essentially the same thing? Ignore differences in wording, case, and punctuation.',
+            instructions:
+              'Do these two answers mean essentially the same thing? ' +
+              'When a player answers "me", "I" or "myself", it refers to that player themself — ' +
+              `so "me" from ${starName} and "${starName}" from ${guesserName} are the SAME answer. ` +
+              'Ignore differences in wording, word order, case and punctuation. ' +
+              'Paraphrases like "farm living" and "living in a farm" are the same answer.',
           },
         },
       }),
@@ -188,11 +204,21 @@ async function doReveal(room) {
   room.state = 'revealed'; // set before any await — keeps the guard race-safe
   const star = room.players[room.starIdx];
   const guesser = room.players[1 - room.starIdx];
-  const starAnswer = String(room.answers[star.id] || '').slice(0, 140);
-  const guessAnswer = String(room.answers[guesser.id] || '').slice(0, 140);
+  const starAnswerRaw = String(room.answers[star.id] || '').slice(0, 140);
+  const guessAnswerRaw = String(room.answers[guesser.id] || '').slice(0, 140);
+  // resolve "me" → speaker name before matching (display keeps the original text)
+  const starAnswer = resolveSelf(starAnswerRaw, star.name);
+  const guessAnswer = resolveSelf(guessAnswerRaw, guesser.name);
+  const questionText = room.questions[room.round].replaceAll('{name}', star.name);
 
   // semantic similarity via Drex, falling back to the local fuzzy matcher
-  let sim = await drexSimilarity(starAnswer, guessAnswer);
+  let sim = await drexSimilarity({
+    question: questionText,
+    starName: star.name,
+    guesserName: guesser.name,
+    starAnswer: starAnswerRaw,
+    guessAnswer: guessAnswerRaw,
+  });
   if (sim == null) sim = answersMatch(starAnswer, guessAnswer) ? 1 : 0;
 
   let verdict = 'miss', starPts = 0, guessPts = 0;
@@ -211,8 +237,8 @@ async function doReveal(room) {
     question: room.questions[room.round].replaceAll('{name}', star.name),
     starName: star.name,
     guesserName: guesser.name,
-    starAnswer,
-    guessAnswer,
+    starAnswer: starAnswerRaw,
+    guessAnswer: guessAnswerRaw,
     match: verdict === 'match',
     partial: verdict === 'partial',
     verdict,

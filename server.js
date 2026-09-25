@@ -10,6 +10,9 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Health check for hosts / uptime monitors
+app.get('/health', (req, res) => res.json({ ok: true }));
+
 const PORT = process.env.PORT || 3000;
 const ROUND_SECONDS = 30;   // time to answer each question
 const REVEAL_SECONDS = 12;  // auto-advance after reveal

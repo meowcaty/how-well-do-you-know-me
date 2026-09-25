@@ -1,0 +1,20 @@
+{
+  "name": "how-well-do-you-know-me",
+  "version": "1.0.0",
+  "description": "A real-time 2-player \"How well do you know me\" game for couples — Node + Socket.IO + anime.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "node scripts/simulate.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}

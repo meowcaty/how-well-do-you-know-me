@@ -17,8 +17,23 @@ Built with **Node + Express + Socket.IO** (websockets) and **anime.js v4** for t
 
 Each round one player is in the **hot seat** ⭐ — a question about them appears, both answer secretly
 (the star answers honestly, the partner guesses), then a 3-2-1 countdown reveals both answers side by side.
-Match = the guesser scores **+100**, the star **+50**. Answers are matched fuzzily, so typos,
-capitalization and punctuation don't ruin a good guess.
+Full match = the guesser scores **+100**, the star **+50**.
+Close-but-not-identical answers earn **partial points** (+50 / +25) — "pizza" vs "cheesy pizza" counts!
+
+## Smarter matching with Drex (optional)
+
+By default answers are matched with a local fuzzy matcher (typo / case / punctuation tolerant).
+Set the `DREX_API_KEY` env var to upgrade to semantic matching via the
+[Drex decision API](https://drex.nace.ai/docs) — it judges whether two answers *mean* the same thing
+and returns a similarity score:
+
+- **≥ 75%** → full match (+100 / +50)
+- **45–74%** → partial match (+50 / +25)
+- **< 45%** → no match
+
+If the key is missing or the API is unreachable/slow, the game silently falls back to the local
+fuzzy matcher — a reveal never breaks because of it. On Render: dashboard → your service →
+**Environment** → add `DREX_API_KEY`. Note: answers are sent to Drex's API for scoring when enabled.
 
 ## Project layout
 

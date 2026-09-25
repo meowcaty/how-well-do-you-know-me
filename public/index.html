@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>How Well Do You Know Me? 💗</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💗</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="bg-hearts" aria-hidden="true"></div>
+<button id="sound-toggle" title="Toggle sound">🔊</button>
+
+<main class="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="screen-home" class="screen">
+    <div class="logo-hearts" id="logo-hearts">💗</div>
+    <h1 class="game-title" id="game-title"><span>How Well</span><span>Do You</span><span class="hl">Know Me?</span></h1>
+    <p class="tagline">a tiny game for two hearts, miles apart</p>
+    <div class="card">
+      <label class="lbl" for="name-input">Your name</label>
+      <input id="name-input" class="input" maxlength="16" placeholder="e.g. Yadu" autocomplete="off">
+      <button id="btn-create" class="btn btn-primary">✨ Create a room</button>
+      <div class="divider"><span>or</span></div>
+      <label class="lbl" for="code-input">Room code</label>
+      <div class="join-row">
+        <input id="code-input" class="input code" maxlength="4" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
+        <button id="btn-join" class="btn btn-secondary">Join 💞</button>
+      </div>
+      <p id="invite-hint" class="hint hidden">💌 You've been invited! Enter your name and tap Join.</p>
+    </div>
+    <p class="foot">play together live — one room, two phones, zero distance 💫</p>
+  </section>
+
+  <!-- ============ LOBBY ============ -->
+  <section id="screen-lobby" class="screen hidden">
+    <h1 class="screen-title">Your cozy room</h1>
+    <div class="card room-card">
+      <div class="lbl">room code</div>
+      <div class="room-code" id="room-code">····</div>
+      <div class="copy-row">
+        <button id="btn-copy-code" class="btn btn-ghost btn-sm">📋 Copy code</button>
+        <button id="btn-copy-link" class="btn btn-ghost btn-sm">🔗 Copy invite link</button>
+      </div>
+    </div>
+    <div class="players" id="players"></div>
+    <div class="card" id="settings-card">
+      <div class="lbl">question pack</div>
+      <div class="packs" id="packs">
+        <button class="pack" data-pack="sweet">💗<span>Sweet</span></button>
+        <button class="pack" data-pack="funny">😂<span>Funny</span></button>
+        <button class="pack" data-pack="spicy">🌶️<span>Spicy</span></button>
+        <button class="pack" data-pack="all">🎲<span>Mix all</span></button>
+      </div>
+      <div class="lbl">rounds</div>
+      <div class="stepper">
+        <button id="rounds-minus" class="step-btn">−</button>
+        <div id="rounds-val" class="rounds-val">5</div>
+        <button id="rounds-plus" class="step-btn">+</button>
+      </div>
+    </div>
+    <button id="btn-start" class="btn btn-primary hidden">Start game 💖</button>
+    <p id="lobby-wait" class="hint hidden">💭 Waiting for the host to start…</p>
+    <button id="btn-leave" class="btn btn-ghost">Leave room</button>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="screen-game" class="screen hidden">
+    <div class="hud">
+      <div class="hud-round" id="hud-round">Question 1/5</div>
+      <div class="hud-scores" id="hud-scores"></div>
+    </div>
+
+    <div id="game-play">
+      <div id="star-banner" class="star-banner"></div>
+      <div class="card question-card">
+        <div class="q-label">💭 question</div>
+        <h2 id="question-text" class="question"></h2>
+      </div>
+      <div class="timer">
+        <div class="timer-track"><div id="timer-fill"></div></div>
+        <div id="timer-num" class="timer-num">30</div>
+      </div>
+      <form id="answer-form" class="card answer-card" autocomplete="off">
+        <label class="lbl" id="answer-label">Your answer</label>
+        <input id="answer-input" class="input" maxlength="140" placeholder="">
+        <button class="btn btn-primary" type="submit">Lock it in 🔒</button>
+      </form>
+      <div id="waiting-pill" class="pill hidden"><span class="dots"><i></i><i></i><i></i></span>waiting for your partner…</div>
+      <div id="partner-pill" class="pill pill-done hidden">💗 Partner answered!</div>
+    </div>
+
+    <div id="game-reveal" class="hidden">
+      <div id="countdown" class="countdown hidden"></div>
+      <div id="reveal-cards" class="hidden">
+        <div class="ans-card star-ans">
+          <div class="ans-tag" id="star-tag"></div>
+          <div class="ans-text" id="star-answer"></div>
+        </div>
+        <div class="vs">⚡</div>
+        <div class="ans-card guess-ans">
+          <div class="ans-tag" id="guesser-tag"></div>
+          <div class="ans-text" id="guesser-answer"></div>
+        </div>
+        <div id="verdict" class="verdict"></div>
+        <div id="points-row" class="points-row"></div>
+        <button id="btn-next" class="btn btn-primary">Next question ➜</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME OVER ============ -->
+  <section id="screen-over" class="screen hidden">
+    <div class="trophy" id="trophy">🏆</div>
+    <h1 id="winner-text" class="winner"></h1>
+    <p id="winner-sub" class="tagline"></p>
+    <div class="card"><div id="final-scores" class="final-scores"></div></div>
+    <button id="btn-again" class="btn btn-primary">Play again 💗</button>
+    <button id="btn-newroom" class="btn btn-ghost">New room</button>
+  </section>
+
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs/lib/anime.iife.min.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

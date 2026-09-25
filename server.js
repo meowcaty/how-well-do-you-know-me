@@ -17,6 +17,45 @@ const PORT = process.env.PORT || 3000;
 const ROUND_SECONDS = 30;   // time to answer each question
 const REVEAL_SECONDS = 12;  // auto-advance after reveal
 
+/* ---------- Drex semantic answer matching (optional, graceful fallback) ----------
+   Set DREX_API_KEY to let Drex judge whether two answers mean the same thing,
+   with partial credit for close-but-not-identical answers. Without a key (or if
+   the API is unreachable) the local fuzzy matcher is used instead. */
+const DREX_API_KEY = process.env.DREX_API_KEY || '';
+const DREX_URL = 'https://drex.nace.ai/v1/systemone';
+
+async function drexSimilarity(a, b) {
+  if (!DREX_API_KEY) return null;
+  const x = String(a || '').trim(), y = String(b || '').trim();
+  if (!x || !y) return null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(DREX_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${DREX_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'drex-latest',
+        state: `Answer 1: "${x}"\nAnswer 2: "${y}"`,
+        questions: {
+          same: {
+            type: 'noul',
+            instructions: 'Do these two answers mean essentially the same thing? Ignore differences in wording, case, and punctuation.',
+          },
+        },
+      }),
+      signal: ctrl.signal,
+    });
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const p = data && data.answers && data.answers.same && data.answers.same.noul;
+    return typeof p === 'number' ? Math.min(1, Math.max(0, p)) : null;
+  } catch {
+    return null;
+  }
+}
+
 const rooms = new Map();
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const VALID_PACKS = ['all', 'sweet', 'funny', 'spicy'];
@@ -143,22 +182,29 @@ function startRound(room) {
   }, ROUND_SECONDS * 1000);
 }
 
-function doReveal(room) {
+async function doReveal(room) {
   if (room.state !== 'answering') return;
   clearTimeout(room.timer);
-  room.state = 'revealed';
+  room.state = 'revealed'; // set before any await — keeps the guard race-safe
   const star = room.players[room.starIdx];
   const guesser = room.players[1 - room.starIdx];
   const starAnswer = String(room.answers[star.id] || '').slice(0, 140);
   const guessAnswer = String(room.answers[guesser.id] || '').slice(0, 140);
-  const match = answersMatch(starAnswer, guessAnswer);
-  let starPts = 0, guessPts = 0;
-  if (match) {
-    guesser.score += 100;
-    star.score += 50;
-    guessPts = 100;
-    starPts = 50;
+
+  // semantic similarity via Drex, falling back to the local fuzzy matcher
+  let sim = await drexSimilarity(starAnswer, guessAnswer);
+  if (sim == null) sim = answersMatch(starAnswer, guessAnswer) ? 1 : 0;
+
+  let verdict = 'miss', starPts = 0, guessPts = 0;
+  if (sim >= 0.75) {
+    verdict = 'match';
+    guessPts = 100; starPts = 50;
+  } else if (sim >= 0.45) {
+    verdict = 'partial';
+    guessPts = 50; starPts = 25;
   }
+  guesser.score += guessPts;
+  star.score += starPts;
   io.to(room.code).emit('reveal', {
     round: room.round + 1,
     total: room.questions.length,
@@ -167,7 +213,10 @@ function doReveal(room) {
     guesserName: guesser.name,
     starAnswer,
     guessAnswer,
-    match,
+    match: verdict === 'match',
+    partial: verdict === 'partial',
+    verdict,
+    similarity: Math.round(sim * 100) / 100,
     points: { [star.name]: starPts, [guesser.name]: guessPts },
     scores: publicPlayers(room),
     isLast: room.round + 1 >= room.questions.length,

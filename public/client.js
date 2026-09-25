@@ -441,6 +441,13 @@
         sfx.chime();
         const r = v.getBoundingClientRect();
         burstHearts(r.left + r.width / 2, r.top, 18);
+      } else if (d.partial) {
+        const pct = Math.round((d.similarity || 0) * 100);
+        v.textContent = `Close enough! ${pct}% same 🥰`;
+        v.className = 'verdict partial';
+        sfx.chime();
+        const r = v.getBoundingClientRect();
+        burstHearts(r.left + r.width / 2, r.top, 8);
       } else {
         v.textContent = 'So close! 🙈';
         v.className = 'verdict miss';

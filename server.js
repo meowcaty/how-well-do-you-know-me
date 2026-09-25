@@ -14,7 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (req, res) => res.json({ ok: true }));
 
 const PORT = process.env.PORT || 3000;
-const ROUND_SECONDS = 30;   // time to answer each question
+const ROUND_SECONDS = 60;   // time to answer each question
 const REVEAL_SECONDS = 12;  // auto-advance after reveal
 
 /* ---------- Drex semantic answer matching (optional, graceful fallback) ----------
